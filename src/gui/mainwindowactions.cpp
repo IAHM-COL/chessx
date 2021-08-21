@@ -65,6 +65,9 @@
 #include <time.h>
 
 #include <QtGui>
+#include <QQmlComponent>
+#include <QQmlEngine>
+#include <QVariant>
 #include <QAction>
 #include <QDesktopServices>
 #include <QFileDialog>
@@ -81,6 +84,8 @@
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
+
+#include<QTextStream>
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 #define DEBUG_NEW new( _NORMAL_BLOCK, __FILE__, __LINE__ )
@@ -112,40 +117,95 @@ void MainWindow::slotFileNew()
     }
 }
 
-void MainWindow::slotFileOpen()
-{
-    QStringList filters;
-    filters << tr("PGN databases (*.pgn)")
-#ifdef USE_SCID
-           << tr("Scid databases (*.si4)")
-#endif
-           << tr("Polyglot books (*.bin)")
-           << tr("Arena books (*.abk)")
-           << tr("Chessbase books (*.ctg)");
-    QStringList files = QFileDialog::getOpenFileNames(this, tr("Open database"),
-                        AppSettings->value("/General/DefaultDataPath").toString(),
-                        filters.join(";;"));
-    foreach(QString file, files)
+void MainWindow::slotQMLFileHandler(QUrl filename, bool utf8type){
+  QTextStream(stdout) << "I got slotted " << endl;
+  QTextStream(stdout) << utf8type << endl;
+  QTextStream(stdout) << filename.toString() << endl;
+
+  //QTextStream(stdout) << "UTF byte is " << utf8type << endl;
+
+  /*
+      foreach(QString file, files)
     {
         if(!file.isEmpty())
         {
             openDatabaseUrl(file, false);
         }
     }
+  */
+}
+
+void MainWindow::slotFileOpen( )
+{
+  //Create QML File Dialog
+  QQmlEngine engine;
+  QQmlComponent component(&engine,
+			  QUrl::fromLocalFile(":/qml/filedialog.qml"));
+  QObject *fileQMLDialog = component.create();
+
+  //If there is a Default Data Path in settings, overwrite the home folder
+  QString dataPath = AppSettings->value("/General/DefaultDataPath").toString();
+  if (!dataPath.isNull( )){
+    fileQMLDialog->setProperty("folder", QUrl(QString("file:").append(dataPath)));
+  }
+
+  //Set the name filters and other properties
+  QStringList filters;
+  filters.append(tr("PGN databases (*.pgn)"));
+#ifdef USE_SCID
+  filters.append(tr("Scid databases (*.si4)"));
+#endif
+  filters.append(tr("Polyglot books (*.bin)"));
+  filters.append(tr("Arena books (*.abk)"));
+  filters.append(tr("Chessbase books (*.ctg)"));
+  filters.append(tr("All files (*)"));
+  fileQMLDialog->setProperty("nameFilters", filters);
+  /* A false UTF8 bit is set */
+  fileQMLDialog->setProperty("utf8flag", false); //keep utf8flag false
+  fileQMLDialog->setProperty("title",tr("Open database"));
+  fileQMLDialog->setProperty("visible",true);
+  
+  //Obtain files selected as Singal changes, and process them with the Handler
+  QObject::connect(fileQMLDialog, SIGNAL(selected(QUrl, bool)),
+	  this, SLOT(slotQMLFileHandler(QUrl, bool)));
+
+
+  QUrl Test1= QUrl("file:/home");
+  bool Test2= false;
+  slotQMLFileHandler(Test1, Test2); 
 }
 
 void MainWindow::slotFileOpenUtf8()
 {
-    QStringList files = QFileDialog::getOpenFileNames(this, tr("Open database"),
-                        AppSettings->value("/General/DefaultDataPath").toString(),
-                        tr("PGN databases (*.pgn)"));
-    foreach(QString file, files)
-    {
-        if(!file.isEmpty())
-        {
-            openDatabaseUrl(file, true);
-        }
-    }
+  //Create QML File Dialog
+  QQmlEngine engine;
+  QQmlComponent component(&engine,
+			  QUrl::fromLocalFile(":/qml/filedialog.qml"));
+  QObject *fileQMLDialog = component.create();
+
+  //If there is a Default Data Path in settings, overwrite the home folder
+  QString dataPath = AppSettings->value("/General/DefaultDataPath").toString();
+  if (!dataPath.isNull( )){
+    fileQMLDialog->setProperty("folder", QUrl(QString("file:").append(dataPath)));
+  }
+
+  //Set the name filters and other properties
+  QStringList filters;
+  filters.append(tr("PGN databases (*.pgn)"));
+  filters.append(tr("All files (*)"));
+  fileQMLDialog->setProperty("nameFilters", filters);
+  /* A false UTF8 bit is set */
+  fileQMLDialog->setProperty("utf8flag", true); //set utf8flag true
+  fileQMLDialog->setProperty("title",tr("Open database (UTF-8)"));
+  fileQMLDialog->setProperty("visible",true);
+  
+  //Obtain files selected as Singal changes, and process them with the Handler
+  QObject::connect(fileQMLDialog, SIGNAL(selected(QUrl, bool)),
+	  this, SLOT(slotQMLFileHandler(QUrl, bool)));
+
+  QUrl Test1= QUrl("file:/home");
+  bool Test2= false;
+  slotQMLFileHandler(Test1, Test2); 
 }
 
 void MainWindow::slotFileOpenRecent()

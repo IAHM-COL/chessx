@@ -281,6 +281,8 @@ public slots:
     void slotFilterLoad(GameId index);
     /** Creates an empty chessxdatabase*/
     void slotFileNew();
+    /** Handles the signal by QML dialog with files selected **/
+    void slotQMLFileHandler(QUrl filename, bool utf8type);
     /** Open File dialog, choose a database and open it */
     void slotFileOpen();
     /** Open File dialog, choose a database and open it in UTF8 format */

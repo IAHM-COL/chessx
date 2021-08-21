@@ -9,6 +9,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   QT += printsupport
   QT += core gui widgets
   QT += xml
+  QT += qml
   QT -= multimediawidgets
   # Comment out sound for Ubuntu with Qt5 if multimedia is not available (default in Ubuntu)
   CONFIG += sound
