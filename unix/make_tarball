@@ -1,12 +1,31 @@
-CNAME=chessx-1.6.0
-__SCRIPTDIR="${0%/*}"
+#!/bin/sh
+DIR=$( dirname -- "$( readlink -f -- "$0"; )"; )
+cd "$(DIR)"
 
-if [ -d "$CNAME" ]; then
-   gtar -czf "${CNAME}.tgz" --exclude-from=$__SCRIPTDIR/tar_exclude.txt ./${CNAME}
+echo "Build archive from ${DIR} in ${DIR}/../Packages/"
+
+VERSION=$(awk '
+    BEGIN { major="0"; minor="0"; patch="0" }
+    /#define VERSION_MAJOR/ {gsub(/[^0-9]/, "", $3); major=$3; }
+    /#define VERSION_MINOR/ {gsub(/[^0-9]/, "", $3); minor=$3; }
+    /#define REVISION/ {gsub(/[^0-9]/, "", $3); patch=$3; }
+    END {
+        print major "." minor "." patch
+    }' ${DIR}/../src/database/version.h)
+    
+echo "Building archive for version ${VERSION}"
+    
+CNAME=chessx-${VERSION}
+
+if [ -d chessx-master ]; then
+   gtar -czf "${CNAME}.tgz" --exclude-from="tar_exclude.txt" "chessx-master"
+   mv "${CNAME}.tgz" ../Packages/
    echo "Ready"
 else
-  echo "Directory not found"
+  echo 'Directory not found'
 fi
+
+cd -
 
 
 
